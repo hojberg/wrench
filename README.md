@@ -1,11 +1,4 @@
-	                                      /\ \        
-	 __  __  __  _ __    __    ___     ___\ \ \___    
-	/\ \/\ \/\ \/\`'__\/'__`\/' _ `\  /'___\ \  _ `\  
-	\ \ \_/ \_/ \ \ \//\  __//\ \/\ \/\ \__/\ \ \ \ \ 
-	 \ \___x___/'\ \_\\ \____\ \_\ \_\ \____\\ \_\ \_\
-	  \/__//__/   \/_/ \/____/\/_/\/_/\/____/ \/_/\/_/
-
-## Description
+# Wrench
 
 Wrench is a tiny javascript router / toolbox that is fully standalone.
 It's main purpose is to help making single page evented javascript applications
