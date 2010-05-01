@@ -50,83 +50,80 @@
         route         = '';
 		
     if (currentRoutes.length > 0 && currentRoutes[0] != "") {
-			
-			currentRoutes.forEach(function (routeString) {
-				var rawParams = routeString.split(":");			
-				func = rawParams.shift();
-				if (rawParams.length > 0 && rawParams[0] != undefined) {
-					rawParams[0].split("+").forEach(function (param) {
-						params[param.split("=")[0]] = param.split("=")[1]
-					});
-				}
+      currentRoutes.forEach(function (routeString) {
+        var rawParams = routeString.split(":");			
+            func      = rawParams.shift();
+        if (rawParams.length > 0 && rawParams[0] != undefined) {
+          rawParams[0].split("+").forEach(function (param) {
+            params[param.split("=")[0]] = param.split("=")[1]
+          });
+        }
 
-				if (func in routing.routes) routing.routes[func](params);			
-			});
-			
-		}
-		else if ("/" in routing.routes) {
-			routing.routes["/"]();
-		}
-		
-	};
-	
-	// wrench application object
-	var wrenchApp = {
-		callRoute: function (route, params) {
-			routing.changeRoute(route, params);
-		},
-		run: function () {
-			var app = this;
-
-			window.addEventListener('load', function () {
-				routing.locate();
-				if (typeof app.init === 'function') app.init();
-			}, false);
-			// window.onhashchange = routing.locate;
-			
-			return app;
-		}
+        if (func in routing.routes) routing.routes[func](params);			
+      });	
+    }
+    else if ("/" in routing.routes) {
+      routing.routes["/"]();
+    }
   };
 	
-	// ----------------- public api ----------------- //
-	wrench.VERSION = "0.0.1";
+  // wrench application object
+  var wrenchApp = {
+    callRoute: function (route, params) {
+      routing.changeRoute(route, params);
+    },
+    run: function () {
+      var app = this;
+
+      window.addEventListener('load', function () {
+        routing.locate();
+        if (typeof app.init === 'function') app.init();
+      }, false);
+      // window.onhashchange = routing.locate;
+			
+      return app;
+    }
+  };
 	
-	// Turn an object into a wrench application
-	wrench.appify = function (properties) {
-		function F() {}
-		F.prototype = wrenchApp;
-		var app = new F();
-  	for (var prop in properties)
-    	if (properties.hasOwnProperty(prop))
-      	app[prop] = properties[prop];
-		return app;
-	};
+  // ----------------- public api ----------------- //
+  wrench.VERSION = "0.0.1";
+	
+  // Turn an object into a wrench application
+  wrench.appify = function (properties) {
+    function F() {}
+    F.prototype = wrenchApp;
+    var app = new F();
+    for (var prop in properties)
+      if (properties.hasOwnProperty(prop))
+        app[prop] = properties[prop];
+    return app;
+  };
 		
-	// connects a route to a function
-	// can be used like so: var users = route("users", function () {});
-	// or: var users = route("users").to(function () {});
-	// all routed functions will be called with a params hash
-	//  as the only argument
-	window.route = function (route, func) {
-		if (typeof func === 'function') {
-			routing.routes[route] = func;			
-			return function (params) {
-				routing.changeRoute(route, params);
-				func(params);
-			};
-		}
-		else {
-			return {
-					to: function (func) { 
-						routing.routes[route] = func;
-						return function (params) {
-							routing.changeRoute(route, params);
-							func(params);
-						};
-					} 
-				};
-		}
-	};
+  // connects a route to a function
+  // can be used like so: var users = route("users", function () {});
+  // or: var users = route("users").to(function () {});
+  // all routed functions will be called with a params hash
+  // as the only argument
+  window.route = function (route, func) {
+    if (typeof func === 'function') {
+      routing.routes[route] = func;			
+      return function (params) {
+        routing.changeRoute(route, params);
+        func(params);
+      };
+    }
+    else {
+      return {
+        to: function (func) { 
+          routing.routes[route] = func;
+          return function (params) {
+            routing.changeRoute(route, params);
+            func(params);
+          };
+        } 
+      };
+    }
+  };
 	
-	window.wrench = wrench;	
+  window.wrench = wrench;	
 }());
