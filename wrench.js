@@ -5,7 +5,7 @@
 	// ----------------- ES5 features for older browsers ----------------- //
 	if (!Array.prototype.forEach) {
 		Array.prototype.forEach =  function(block, thisObject) {
-			var len = this.length >>> 0;
+			var len = this.length > 0;
 			for (var i = 0; i < len; i++)
 				if (i in this) block.call(thisObject, this[i], i, this);
 		};
@@ -44,7 +44,7 @@
 		w.location.hash = route;		
 	};
 	
-	routing.find = function () {		
+	routing.locate = function () {		
 		var currentRoutes = w.location.hash.replace("#", "").split(";"), 
 				params 				= {}, 
 				route 				= '';
@@ -79,14 +79,14 @@
 			var app = this;
 
 			window.addEventListener('load', function () {
-				routing.find();
-				app.init();
+				routing.locate();
+				if (typeof app.init === 'function') app.init();
 			}, false);
-			// window.onhashchange = routing.find;
+			// window.onhashchange = routing.locate;
 			
 			return app;
 		}
-	};
+  };
 	
 	// ----------------- public api ----------------- //
 	wrench.VERSION = "0.0.1";
@@ -108,7 +108,6 @@
 	// all routed functions will be called with a params hash
 	//  as the only argument
 	window.route = function (route, func) {
-		
 		if (typeof func === 'function') {
 			routing.routes[route] = func;			
 			return function (params) {
