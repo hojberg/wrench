@@ -104,7 +104,7 @@
   // or: var users = route("users").to(function () {});
   // all routed functions will be called with a params hash
   // as the only argument
-  window.route = function (route, func) {
+  w.route = function (route, func) {
     if (typeof func === 'function') {
       routing.routes[route] = func;			
       return function (params) {
@@ -125,5 +125,5 @@
     }
   };
 	
-  window.wrench = wrench;	
+  w.wrench = wrench;	
 }());
