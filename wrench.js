@@ -1,3 +1,4 @@
+/*globals window document */
 "use strict";
 
 (function () {
@@ -25,16 +26,16 @@
       routeUrl += ":";
       for (var param in params) {
         if (params.hasOwnProperty(param)) {
-          if (i != 1) routeUrl += "+";
+          if (i !== 1) routeUrl += "+";
           routeUrl += param + "=" + params[param];
           i++;
         }
       }
     }
 				
-    if (w.location.hash != "" && 
-        w.location.hash != "#" && 
-        w.location.hash.indexOf(route) == -1) {
+    if (w.location.hash !== "" && 
+        w.location.hash !== "#" && 
+        w.location.hash.indexOf(route) === -1) {
       route = w.location.hash + ";" + routeUrl;
     }
     else {
@@ -49,13 +50,13 @@
         params        = {}, 
         route         = '';
 		
-    if (currentRoutes.length > 0 && currentRoutes[0] != "") {
+    if (currentRoutes.length > 0 && currentRoutes[0] !== "") {
       currentRoutes.forEach(function (routeString) {
         var rawParams = routeString.split(":");			
             func      = rawParams.shift();
-        if (rawParams.length > 0 && rawParams[0] != undefined) {
+        if (rawParams.length > 0 && rawParams[0] !== undefined) {
           rawParams[0].split("+").forEach(function (param) {
-            params[param.split("=")[0]] = param.split("=")[1]
+            params[param.split("=")[0]] = param.split("=")[1];
           });
         }
 
