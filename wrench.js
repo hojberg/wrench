@@ -1,55 +1,55 @@
 "use strict";
 
 (function () {
-
-	// ----------------- ES5 features for older browsers ----------------- //
-	if (!Array.prototype.forEach) {
-		Array.prototype.forEach =  function(block, thisObject) {
-			var len = this.length > 0;
-			for (var i = 0; i < len; i++)
-				if (i in this) block.call(thisObject, this[i], i, this);
-		};
-	}	
+  
+  // ----------------- ES5 features for older browsers ----------------- //
+  if (!Array.prototype.forEach) {
+    Array.prototype.forEach =  function(block, thisObject) {
+      var len = this.length > 0;
+      for (var i = 0; i < len; i++)
+        if (i in this) block.call(thisObject, this[i], i, this);
+    };
+  }	
 	
-	// ----------------- private api ----------------- //
-	var wrench	= {},
-			routing = {routes: {}},
-			w 			= window,
-			d 			= document;
+  // ----------------- private api ----------------- //
+  var wrench  = {},
+      routing = {routes: {}},
+      w       = window,
+      d       = document;
 	
-	// Routing
-	routing.changeRoute = function (route, params) {
-		var routeUrl 	= route,
-				i 				= 1;
-		if (typeof params !== 'undefined') {
-			routeUrl += ":";
-	  	for (var param in params) {
-	    	if (params.hasOwnProperty(param)) {
-					if (i != 1) routeUrl += "+";
-					routeUrl += param + "=" + params[param];
-					i++;
-				}
-			}
-		}
+  // Routing
+  routing.changeRoute = function (route, params) {
+    var routeUrl  = route,
+        i         = 1;
+    if (typeof params !== 'undefined') {
+      routeUrl += ":";
+      for (var param in params) {
+        if (params.hasOwnProperty(param)) {
+          if (i != 1) routeUrl += "+";
+          routeUrl += param + "=" + params[param];
+          i++;
+        }
+      }
+    }
 				
-		if (w.location.hash != "" && 
-				w.location.hash != "#" && 
-				w.location.hash.indexOf(route) == -1) {
-			route = w.location.hash + ";" + routeUrl;
-		}
-		else {
-			route = routeUrl;
-		}
+    if (w.location.hash != "" && 
+        w.location.hash != "#" && 
+        w.location.hash.indexOf(route) == -1) {
+      route = w.location.hash + ";" + routeUrl;
+    }
+    else {
+      route = routeUrl;
+    }
 		
-		w.location.hash = route;		
-	};
+    w.location.hash = route;		
+  };
 	
-	routing.locate = function () {		
-		var currentRoutes = w.location.hash.replace("#", "").split(";"), 
-				params 				= {}, 
-				route 				= '';
+  routing.locate = function () {		
+    var currentRoutes = w.location.hash.replace("#", "").split(";"), 
+        params        = {}, 
+        route         = '';
 		
-		if (currentRoutes.length > 0 && currentRoutes[0] != "") {
+    if (currentRoutes.length > 0 && currentRoutes[0] != "") {
 			
 			currentRoutes.forEach(function (routeString) {
 				var rawParams = routeString.split(":");			
