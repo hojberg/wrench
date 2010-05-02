@@ -2,23 +2,12 @@
 "use strict";
 
 (function () {
-  
-  // ----------------- ES5 features for older browsers ----------------- //
-  if (!Array.prototype.forEach) {
-    Array.prototype.forEach =  function(block, thisObject) {
-      var len = this.length > 0;
-      for (var i = 0; i < len; i++)
-        if (i in this) block.call(thisObject, this[i], i, this);
-    };
-  }	
-  
-  // ----------------- private api ----------------- //
   var wrench  = {},
       routing = {routes: {}},
       w       = window,
       d       = document;
-	
-  // Routing
+    
+  // ----------------- routing ----------------- //
   routing.changeRoute = function (route, params) {
     var routeUrl  = route,
         i         = 1;
@@ -46,29 +35,31 @@
   };
 	
   routing.locate = function () {		
-    var currentRoutes = w.location.hash.replace("#", "").split(";"), 
-        params        = {}, 
-        route         = '';
+    var currentRoutes     = w.location.hash.replace("#", "").split(";"),
+        currentRoutesLen  = currentRoutes.length,
+        params            = {}, 
+        route             = '';
 		
-    if (currentRoutes.length > 0 && currentRoutes[0] !== "") {
-      currentRoutes.forEach(function (routeString) {
-        var rawParams = routeString.split(":");			
+    if (currentRoutesLen > 0 && currentRoutes[0] !== "") {
+      for (var i = 0; i < currentRoutesLen; i++) {
+        var rawParams = currentRoutes[i].split(":");
             func      = rawParams.shift();
-        if (rawParams.length > 0 && rawParams[0] !== undefined) {
-          rawParams[0].split("+").forEach(function (param) {
-            params[param.split("=")[0]] = param.split("=")[1];
-          });
+        if (rawParams.length > 0 && typeof rawParams[0] !== "undefined") {
+          var paramPair     = rawParams[0].split("+"), 
+              paramPairLen  = paramPair.length;
+          for (var j = 0; j < paramPairLen; j++) {
+            params[paramPair[j].split("=")[0]] = paramPair[j].split("=")[1];
+          }
         }
-
-        if (func in routing.routes) routing.routes[func](params);			
-      });	
+        if (func in routing.routes) routing.routes[func](params);		 
+      }
     }
     else if ("/" in routing.routes) {
       routing.routes["/"]();
     }
   };
 	
-  // wrench application object
+  // ----------------- app object ----------------- //
   var wrenchApp = {
     callRoute: function (route, params) {
       routing.changeRoute(route, params);
