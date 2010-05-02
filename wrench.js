@@ -11,7 +11,7 @@
         if (i in this) block.call(thisObject, this[i], i, this);
     };
   }	
-	
+  
   // ----------------- private api ----------------- //
   var wrench  = {},
       routing = {routes: {}},
@@ -73,14 +73,18 @@
     callRoute: function (route, params) {
       routing.changeRoute(route, params);
     },
-    run: function () {
+    run: function (force) {
       var app = this;
-
-      window.addEventListener('load', function () {
+      var loader = function () {
         routing.locate();
         if (typeof app.init === 'function') app.init();
-      }, false);
-      // window.onhashchange = routing.locate;
+      };
+      
+      // Use force loading if wrench is loaded way after the load event has triggered
+      if (force) loader();
+
+      w.addEventListener('load', loader, false);
+      w.onhashchange = routing.locate;
 			
       return app;
     }
