@@ -6,7 +6,9 @@
       routing = {routes: {}},
       w       = window,
       d       = document;
-    
+      
+  wrench.VERSION = "0.0.1";
+      
   // ----------------- routing ----------------- //
   routing.changeRoute = function (route, params) {
     var routeUrl  = route,
@@ -82,7 +84,6 @@
   };
 	
   // ----------------- public api ----------------- //
-  wrench.VERSION = "0.0.1";
 	
   // Turn an object into a wrench application
   wrench.appify = function (properties) {
