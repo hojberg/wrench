@@ -67,8 +67,7 @@ module("Routing");
     app.run(true);
     
     equal(typeof app.params, "undefined", "app.params should not exist");
-  	window.location.hash = "foo/bar:one=two+three=four";
-    // location.hash = "foo/bar?one=two&three=four";
+    window.location.hash = "foo/bar?one=two&three=four";
     ok(typeof app.params !== 'undefined', "app.params should now exist");
     equal(app.params["one"], "two", "app.params['one'] should exist and contain 'two'");
     equal(app.params["three"], "four", "app.params['three'] should exist and contain 'four'");
@@ -117,7 +116,7 @@ module("Routing");
     
     document.getElementsByTagName("form")[0].onsubmit();
     
-    equal(window.location.hash, "#login:username=frank+password=s3cret", "the form data should have submitted to the location.hash");
+    equal(window.location.hash, "#login?username=frank&password=s3cret", "the form data should have submitted to the location.hash");
     ok(typeof app.params !== 'undefined', "app.params should now exist");
     equal(app.params["username"], "frank", "app.params['username'] should exist and contain 'frank'");
     equal(app.params["password"], "s3cret", "app.params['password'] should exist and contain 's3cret'");

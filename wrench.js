@@ -12,14 +12,16 @@
   // ----------------- routing ----------------- //
   routing.lastRoute = "/";
   
+  // translate a route and some params into the window.location.hash
+  // builds a string for window.location.hash into multiple route fragments if applicable
   routing.changeRoute = function (route, params) {
 		var routeUrl  = route,
         i         = 1;
     if (typeof params !== 'undefined') {
-      routeUrl += ":";
+      routeUrl += "?";
       for (var param in params) {
         if (params.hasOwnProperty(param)) {
-          if (i !== 1) routeUrl += "+";
+          if (i !== 1) routeUrl += "&";
           routeUrl += param + "=" + params[param];
           i++;
         }
@@ -35,16 +37,19 @@
       route = routeUrl;
     }
     
-    routing.lastRoute = w.location.hash;		
+    routing.lastRoute = w.location.hash; // route;
     w.location.hash = route;		
   };
 
+  // find out if the the route has change since las time
   routing.hasChanged = function () {
     var changed = w.location.hash != routing.lastRoute && w.location.hash != "#" + routing.lastRoute;
     routing.lastRoute = w.location.hash;
     return changed;
   };
 	
+	// looks at the current window.location.hash and routes to its function
+	// if one is registered and if the route has changed since last locate
   routing.locate = function () {
     if (routing.hasChanged()) {
       var currentRoutes     = w.location.hash.replace("#", "").split(";"),
@@ -54,10 +59,10 @@
 		
       if (currentRoutesLen > 0 && currentRoutes[0] !== "") {
         for (var i = 0; i < currentRoutesLen; i++) {
-          var rawParams = currentRoutes[i].split(":");
+          var rawParams = currentRoutes[i].split("?");
               func      = rawParams.shift();
           if (rawParams.length > 0 && typeof rawParams[0] !== "undefined") {
-            var paramPair     = rawParams[0].split("+"), 
+            var paramPair     = rawParams[0].split("&"), 
                 paramPairLen  = paramPair.length;
             for (var j = 0; j < paramPairLen; j++) {
               params[paramPair[j].split("=")[0]] = paramPair[j].split("=")[1];
@@ -72,6 +77,10 @@
     }
   };
   
+  // form elements on the page with '#' as the first
+  // character in the action attribute gets a onsubmit event added
+  // TODO: find a solution for live adding of onsubmit events if
+  // the user adds a form to the page after load.
   routing.attachFormRoutes = function () {
     for (var i = 0; i < d.forms.length; i++) {
       var form    = d.forms[i], 
@@ -88,19 +97,21 @@
     }
   };
 	
-  // ----------------- app object ----------------- //
+  // the core wrench app object which wrench.appify begets
+  // to form a new application with the wrench methods
   var wrenchApp = {
     run: function (force) {
       var app = this;
       
-      var loader = function () {
+      var bootstrap = function () {
         routing.locate();
         routing.attachFormRoutes();        
         if (typeof app.init === 'function') app.init();
       };      
 
-      // attach event listenes
-      w.addEventListener('load', loader, false);
+      // attach event listener
+      // TODO: find a dom ready function like jquery
+      w.addEventListener('load', bootstrap, false);
       
       // fall back to calling the locate function every 250 miliseconds if the
       // browser doesn't have the onhashchange event
@@ -108,7 +119,7 @@
       else setInterval(routing.locate, 500);
       
 			// Use force loading if wrench is loaded way after the load event has triggered
-      if (force) loader();
+      if (force) bootstrap();
       
       return app;
     }
@@ -152,6 +163,7 @@
       };
     }
   };
-	
+  
+	// add the global wrench variable
   w.wrench = wrench;	
 }());
