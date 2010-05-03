@@ -37,28 +37,37 @@
   };
 	
   routing.locate = function () {		
-    var currentRoutes     = w.location.hash.replace("#", "").split(";"),
-        currentRoutesLen  = currentRoutes.length,
-        params            = {}, 
-        route             = '';
+    if (routing.hasChanged()) {
+      var currentRoutes     = w.location.hash.replace("#", "").split(";"),
+          currentRoutesLen  = currentRoutes.length,
+          params            = {}, 
+          route             = '';
 		
-    if (currentRoutesLen > 0 && currentRoutes[0] !== "") {
-      for (var i = 0; i < currentRoutesLen; i++) {
-        var rawParams = currentRoutes[i].split(":");
-            func      = rawParams.shift();
-        if (rawParams.length > 0 && typeof rawParams[0] !== "undefined") {
-          var paramPair     = rawParams[0].split("+"), 
-              paramPairLen  = paramPair.length;
-          for (var j = 0; j < paramPairLen; j++) {
-            params[paramPair[j].split("=")[0]] = paramPair[j].split("=")[1];
+      if (currentRoutesLen > 0 && currentRoutes[0] !== "") {
+        for (var i = 0; i < currentRoutesLen; i++) {
+          var rawParams = currentRoutes[i].split(":");
+              func      = rawParams.shift();
+          if (rawParams.length > 0 && typeof rawParams[0] !== "undefined") {
+            var paramPair     = rawParams[0].split("+"), 
+                paramPairLen  = paramPair.length;
+            for (var j = 0; j < paramPairLen; j++) {
+              params[paramPair[j].split("=")[0]] = paramPair[j].split("=")[1];
+            }
           }
+          if (func in routing.routes) routing.routes[func](params);		 
         }
-        if (func in routing.routes) routing.routes[func](params);		 
+      }
+      else if ("/" in routing.routes) {
+        routing.routes["/"]();
       }
     }
-    else if ("/" in routing.routes) {
-      routing.routes["/"]();
-    }
+  };
+  
+  routing.lastRoute = "/";
+  routing.hasChanged = function () {
+    var changed = location.hash != routing.lastRoute;
+    routing.lastRoute = location.hash;
+    return changed;
   };
 	
   // ----------------- app object ----------------- //
@@ -76,8 +85,21 @@
       // Use force loading if wrench is loaded way after the load event has triggered
       if (force) loader();
 
+      // attach event listenes
       w.addEventListener('load', loader, false);
-      w.onhashchange = routing.locate;
+      
+      // fall back to calling the locate function every 250 miliseconds if the
+      // browser doesn't have the onhashchange event
+      if ("onhashchange" in w) w.onhashchange = routing.locate;
+      else setInterval(routing.locate, 500);
+      
+      // What about forms added AFTER run() ??
+      // for (var i = 0; i < document.getElementsByTagName("form").length; i++) {
+      //   console.log(document.getElementsByTagName("form")[i]);
+      //   document.getElementsByTagName("form")[i].addEventListener('submit', function () {
+      //     alert('boobs'); 
+      //   }, false);
+      // }
 			
       return app;
     }
