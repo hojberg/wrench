@@ -33,9 +33,9 @@ module("Routing");
   	app.run(true);
   	
   	equal(typeof app.foobarRoute, "undefined", "should not yet have the foobarRoute property");
-  	location.hash = "foo/bar";
+  	window.location.hash = "foo/bar";
     equal(app.foobarRoute, "ran", "should have executed the route function");
-    location.hash = "";
+    window.location.hash = "";
   });
   
   test("should run 2 route fragments", function () {
@@ -53,9 +53,9 @@ module("Routing");
   	app.run(true);
   	
   	equal(app.fragments, 0, "no fragment routes should be excecuted");
-  	location.hash = "fragmentone/foo;fragmenttwo/bar";
+  	window.location.hash = "fragmentone/foo;fragmenttwo/bar";
     equal(app.fragments, 2, "both fragment routes should be excecuted");
-    location.hash = "";
+    window.location.hash = "";
   });
   
   test("should create a params hash and pass it to the route function", function () {
@@ -67,12 +67,12 @@ module("Routing");
     app.run(true);
     
     equal(typeof app.params, "undefined", "app.params should not exist");
-  	location.hash = "foo/bar:one=two+three=four";
+  	window.location.hash = "foo/bar:one=two+three=four";
     // location.hash = "foo/bar?one=two&three=four";
     ok(typeof app.params !== 'undefined', "app.params should now exist");
     equal(app.params["one"], "two", "app.params['one'] should exist and contain 'two'");
-    equal(app.params["three"], "four", "app.params['r'] should exist and contain 'four'");
-    location.hash = "";
+    equal(app.params["three"], "four", "app.params['three'] should exist and contain 'four'");
+    window.location.hash = "";
   });
   
   test("should create params from a named params route", function () {
@@ -87,7 +87,7 @@ module("Routing");
     // location.hash = "list/all";
     // ok(typeof app.params !== 'undefined', "app.params should now exist");
     // equal(app.params["view"], "all", "app.params['view'] should exist and contain 'all'");
-    location.hash = "";
+    window.location.hash = "";
   });
   
   test("a call to a routed function should change location.hash", function () {
@@ -100,7 +100,26 @@ module("Routing");
     app.run(true);
     
     app.routeOne();
-    equal(location.hash, "#foo/bar", "location.hash should be equal to '#foo/bar'");
+    equal(window.location.hash, "#foo/bar", "location.hash should be equal to '#foo/bar'");
     equal(app.numberOfRuns, 1, "the routeOne function should only be ran once");
-    location.hash = '';
+    window.location.hash = '';
+  });
+  
+  test("should add route event handler to all forms with a # in the action", function () {
+    var app = wrench.appify({
+      login: route("login").to(function (params) {
+        app.params = params;
+      })
+    });
+    app.run(true);
+    
+    ok(typeof app.params === 'undefined', "app.params should not exist");  
+    
+    document.getElementsByTagName("form")[0].onsubmit();
+    
+    equal(window.location.hash, "#login:username=frank+password=s3cret", "the form data should have submitted to the location.hash");
+    ok(typeof app.params !== 'undefined', "app.params should now exist");
+    equal(app.params["username"], "frank", "app.params['username'] should exist and contain 'frank'");
+    equal(app.params["password"], "s3cret", "app.params['password'] should exist and contain 's3cret'");
+    window.location.hash = '';
   });

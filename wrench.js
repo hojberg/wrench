@@ -77,8 +77,7 @@
       var form    = d.forms[i], 
           params  = {};
       if (form.action.indexOf("#") == 0) {
-        form.onsubmit = function (event) {
-          var form = event.srcElement;
+        form.onsubmit = function () {
           for (var j = 0; j < form.elements.length; j++) {
             params[form.elements[j].id] = form.elements[j].value;
           }
