@@ -12,7 +12,6 @@ module("Core");
 	test("Should create a new wrench app", function () {
 		var app = wrench.appify({foo: 'bar'});
 		equal(typeof app.run, "function", "should have a run function");
-		equal(typeof app.callRoute, "function", "should have a callRoute function");
 		equal(app.foo, "bar", "should have a foo property that returns 'bar'");
 	});
 	

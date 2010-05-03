@@ -10,8 +10,10 @@
   wrench.VERSION = "0.0.1";
       
   // ----------------- routing ----------------- //
+  routing.lastRoute = "/";
+  
   routing.changeRoute = function (route, params) {
-    var routeUrl  = route,
+		var routeUrl  = route,
         i         = 1;
     if (typeof params !== 'undefined') {
       routeUrl += ":";
@@ -32,11 +34,18 @@
     else {
       route = routeUrl;
     }
-		
+    
+    routing.lastRoute = w.location.hash;		
     w.location.hash = route;		
   };
+
+  routing.hasChanged = function () {
+    var changed = w.location.hash != routing.lastRoute && w.location.hash != "#" + routing.lastRoute;
+    routing.lastRoute = w.location.hash;
+    return changed;
+  };
 	
-  routing.locate = function () {		
+  routing.locate = function () {
     if (routing.hasChanged()) {
       var currentRoutes     = w.location.hash.replace("#", "").split(";"),
           currentRoutesLen  = currentRoutes.length,
@@ -63,27 +72,33 @@
     }
   };
   
-  routing.lastRoute = "/";
-  routing.hasChanged = function () {
-    var changed = location.hash != routing.lastRoute;
-    routing.lastRoute = location.hash;
-    return changed;
+  routing.attachFormRoutes = function () {
+    for (var i = 0; i < d.forms.length; i++) {
+      var form    = d.forms[i], 
+          params  = {};
+      if (form.action.indexOf("#") == 0) {
+        form.onsubmit = function (event) {
+          var form = event.srcElement;
+          for (var j = 0; j < form.elements.length; j++) {
+            params[form.elements[j].id] = form.elements[j].value;
+          }
+          routing.changeRoute(form.action.replace("#", ""), params);
+          return false;
+        };
+      }
+    }
   };
 	
   // ----------------- app object ----------------- //
   var wrenchApp = {
-    callRoute: function (route, params) {
-      routing.changeRoute(route, params);
-    },
     run: function (force) {
       var app = this;
+      
       var loader = function () {
         routing.locate();
+        routing.attachFormRoutes();        
         if (typeof app.init === 'function') app.init();
-      };
-      
-      // Use force loading if wrench is loaded way after the load event has triggered
-      if (force) loader();
+      };      
 
       // attach event listenes
       w.addEventListener('load', loader, false);
@@ -93,14 +108,9 @@
       if ("onhashchange" in w) w.onhashchange = routing.locate;
       else setInterval(routing.locate, 500);
       
-      // What about forms added AFTER run() ??
-      // for (var i = 0; i < document.getElementsByTagName("form").length; i++) {
-      //   console.log(document.getElementsByTagName("form")[i]);
-      //   document.getElementsByTagName("form")[i].addEventListener('submit', function () {
-      //     alert('boobs'); 
-      //   }, false);
-      // }
-			
+			// Use force loading if wrench is loaded way after the load event has triggered
+      if (force) loader();
+      
       return app;
     }
   };
