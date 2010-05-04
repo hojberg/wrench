@@ -50,26 +50,32 @@
 	
 	// looks at the current window.location.hash and routes to its function
 	// if one is registered and if the route has changed since last locate
+	// this is called onhashchange and on load of the page
   routing.locate = function () {
     if (routing.hasChanged()) {
-      var currentRoutes     = w.location.hash.replace("#", "").split(";"),
-          currentRoutesLen  = currentRoutes.length,
-          params            = {}, 
-          route             = '';
+      var fragments     = w.location.hash.replace("#", "").split(";"),
+          fragmentsLen  = fragments.length,
+          params        = {}, 
+          route         = '';
 		
-      if (currentRoutesLen > 0 && currentRoutes[0] !== "") {
-        for (var i = 0; i < currentRoutesLen; i++) {
-          var rawParams = currentRoutes[i].split("?");
-              func      = rawParams.shift();
-          if (rawParams.length > 0 && typeof rawParams[0] !== "undefined") {
-            var paramPair     = rawParams[0].split("&"), 
-                paramPairLen  = paramPair.length;
-            for (var j = 0; j < paramPairLen; j++) {
-              params[paramPair[j].split("=")[0]] = paramPair[j].split("=")[1];
+      if (fragmentsLen > 0 && fragments[0] !== "") {
+        
+        for (var i = 0; i < fragmentsLen; i++) {
+          var query = fragments[i].split("?");
+              route = query.shift();
+              
+          if (query.length > 0 && typeof query[0] !== "undefined") {
+            var paramPairs    = query[0].split("&"), 
+                paramPairsLen = paramPairs.length;
+                
+            for (var j = 0; j < paramPairsLen; j++) {
+              params[paramPairs[j].split("=")[0]] = paramPairs[j].split("=")[1];
             }
+            
           }
-          if (func in routing.routes) routing.routes[func](params);		 
+          if (route in routing.routes) routing.routes[route](params);		 
         }
+        
       }
       else if ("/" in routing.routes) {
         routing.routes["/"]();

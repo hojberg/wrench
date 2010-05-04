@@ -75,17 +75,17 @@ module("Routing");
   });
   
   test("should create params from a named params route", function () {
-    // var app = wrench.appify({
-    //   list: route("list/:view").to(function (params) {
-    //     app.params = params;
-    //   })
-    // });
-    // app.run(true);
-    // 
-    // equal(typeof app.params, "undefined", "app.params should not exist");
-    // location.hash = "list/all";
-    // ok(typeof app.params !== 'undefined', "app.params should now exist");
-    // equal(app.params["view"], "all", "app.params['view'] should exist and contain 'all'");
+    var app = wrench.appify({
+      list: route("list/:view").to(function (params) {
+        app.params = params;
+      })
+    });
+    app.run(true);
+    
+    equal(typeof app.params, "undefined", "app.params should not exist");
+    location.hash = "list/all";
+    ok(typeof app.params !== 'undefined', "app.params should now exist");
+    equal(app.params["view"], "all", "app.params['view'] should exist and contain 'all'");
     window.location.hash = "";
   });
   
