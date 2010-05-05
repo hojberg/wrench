@@ -4,17 +4,37 @@
 (function () {
   var wrench  = {},
       routing = {routes: {}},
+      events  = {},
       w       = window,
       d       = document;
       
   wrench.VERSION = "0.0.1";
+
+  // ----------------- events ----------------- //  
+  events.add = function (element, eventType, handler) { 
+    if (element.addEventListener) {
+      element.addEventListener(eventType, handler, false);
+      return true;
+    }
+    else if (element.attachEvent) {
+      if (eventType === 'DOMContentLoaded') {
+        element   = w;
+        eventType = "load";
+      }
+      return element.attachEvent("on" + eventType, handler);
+    } 
+    else {
+      return false; 
+    } 
+  };
+  
       
   // ----------------- routing ----------------- //
   routing.lastRoute = "/";
   
   // translate a route and some params into the window.location.hash
   // builds a string for window.location.hash into multiple route fragments if applicable
-  routing.changeRoute = function (route, params) {
+  routing.changeRoute = function (route, params, fromForm) {
 		var routeUrl  = route,
         i         = 1;
     if (typeof params !== 'undefined') {
@@ -37,7 +57,9 @@
       route = routeUrl;
     }
     
-    routing.lastRoute = w.location.hash; // route;
+    if (fromForm) routing.lastRoute = w.location.hash;
+    else routing.lastRoute = route;
+    
     w.location.hash = route;		
   };
 
@@ -52,6 +74,7 @@
 	// if one is registered and if the route has changed since last locate
 	// this is called onhashchange and on load of the page
   routing.locate = function () {
+    
     if (routing.hasChanged()) {
       var fragments     = w.location.hash.replace("#", "").split(";"),
           fragmentsLen  = fragments.length,
@@ -92,13 +115,15 @@
       var form    = d.forms[i], 
           params  = {};
       if (form.action.indexOf("#") == 0) {
-        form.onsubmit = function () {
+        
+        events.add(form, "submit", function (event) {
           for (var j = 0; j < form.elements.length; j++) {
             params[form.elements[j].id] = form.elements[j].value;
           }
-          routing.changeRoute(form.action.replace("#", ""), params);
-          return false;
-        };
+          routing.changeRoute(form.action.replace("#", ""), params, true);
+          event.preventDefault();
+        });
+        
       }
     }
   };
@@ -115,19 +140,22 @@
         if (typeof app.init === 'function') app.init();
       };      
 
-      // attach event listener
-      // TODO: find a dom ready function like jquery
-      w.addEventListener('load', bootstrap, false);
+      // attach event listeners
+      events.add(d, "DOMContentLoaded", bootstrap);
       
       // fall back to calling the locate function every 250 miliseconds if the
       // browser doesn't have the onhashchange event
-      if ("onhashchange" in w) w.onhashchange = routing.locate;
+      if ("onhashchange" in w) events.add(w, "hashchange", routing.locate);
       else setInterval(routing.locate, 500);
       
 			// Use force loading if wrench is loaded way after the load event has triggered
       if (force) bootstrap();
-      
+
       return app;
+    },
+    
+    changeRoute: function (route, params) {
+      routing.changeRoute(route, params);
     }
   };
 	
