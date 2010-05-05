@@ -30,7 +30,6 @@
   
       
   // ----------------- routing ----------------- //
-  routing.lastRoute = "/";
   
   // translate a route and some params into the window.location.hash
   // builds a string for window.location.hash into multiple route fragments if applicable
@@ -58,24 +57,36 @@
     }
     
     if (fromForm) routing.lastRoute = w.location.hash;
-    else routing.lastRoute = route;
+    else          routing.lastRoute = route;
     
     w.location.hash = route;		
   };
 
-  // find out if the the route has change since las time
-  routing.hasChanged = function () {
+  // find out if window.location.hash has changed
+  routing.lastRoute = "/";
+  routing.hashChanged = function () {
     var changed = w.location.hash != routing.lastRoute && w.location.hash != "#" + routing.lastRoute;
     routing.lastRoute = w.location.hash;
     return changed;
   };
+  
+  // find out if a specific fragment of window.location.hash has changed
+  routing.lastFragments = [];
+  routing.fragmentChanged = function (fragment) {
+    if (routing.hashChanged() && routing.lastFragments.length > 0) {
+      for (var i = 0; i < routing.lastFragments.length; i++) {
+         
+      }
+    }
+    else return false;
+  }
 	
 	// looks at the current window.location.hash and routes to its function
 	// if one is registered and if the route has changed since last locate
 	// this is called onhashchange and on load of the page
   routing.locate = function () {
     
-    if (routing.hasChanged()) {
+    if (routing.hashChanged()) {
       var fragments     = w.location.hash.replace("#", "").split(";"),
           fragmentsLen  = fragments.length,
           params        = {}, 
