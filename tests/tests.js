@@ -81,19 +81,30 @@ module("Routing", {setup: clearHash, teardown: clearHash});
   });
   
   test("should create params from a named params route", function () {
-    // expect(3);
-    // var app = wrench.appify({
-    //   list: route("list/:view").to(function (params) {
-    //     app.params = params;
-    //   })
-    // });
-    // app.run(true);
-    // 
-    // equal(typeof app.params, "undefined", "app.params should not exist");
-    // location.hash = "list/all";
-    // ok(typeof app.params !== 'undefined', "app.params should now exist");
-    // equal(app.params["view"], "all", "app.params['view'] should exist and contain 'all'");
-    // window.location.hash = "";
+    expect(7);
+    var app = wrench.appify({
+      list: route("list/:view").to(function (params) {
+        app.params = params;
+      }),
+      show: route("show/:section/:id").to(function (params) {
+        app.params = params;
+      })
+    });
+    app.run(true);
+    
+    equal(typeof app.params, "undefined", "app.params should not exist");
+    location.hash = "list/all";
+    ok(typeof app.params !== 'undefined', "app.params should now exist");
+    equal(app.params["view"], "all", "app.params['view'] should exist and contain 'all'");
+    
+    app.params = undefined;
+    location.hash = "";
+        
+    equal(typeof app.params, "undefined", "app.params should not exist");
+    location.hash = "show/green/432";
+    ok(typeof app.params !== 'undefined', "app.params should now exist");
+    equal(app.params["section"], "green", "app.params['section'] should exist and contain 'green'");
+    equal(app.params["id"], "432", "app.params['id'] should exist and contain '432'");
   });
   
   test("should only run a the route of the partial that was changed", function () {

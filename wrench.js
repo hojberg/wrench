@@ -1,5 +1,4 @@
-/*globals window document */
-"use strict";
+// By Simon Nielsen
 
 (function () {
   var wrench  = {},
@@ -10,7 +9,8 @@
       
   wrench.VERSION = "0.0.1";
 
-  // ----------------- events ----------------- //  
+  // ## Events
+  // Cross browser compatible event handling
   events.add = function (element, eventType, handler) { 
     if (element.addEventListener) {
       element.addEventListener(eventType, handler, false);
@@ -28,8 +28,7 @@
     } 
   };  
       
-  // ----------------- routing ----------------- //
-  
+  // ## Routing
   // translate a route and some params into the window.location.hash
   // builds a string for window.location.hash into multiple route partials if applicable
   routing.route2Hash = function (route, params, fromRoute) {
@@ -68,6 +67,7 @@
   
   // find out if a specific partial of window.location.hash has changed
   routing.partialChanged = function (route) {
+    
     if (routing.hashChanged()) {
       var lastPartials    = routing.lastHash.replace("#", "").split(";"),
           currentPartials = w.location.hash.replace("#", "").split(";");
@@ -91,10 +91,10 @@
     }
     else return false;
   };
-	
-	// looks at the current window.location.hash and routes to its function
+  
+  // looks at the current window.location.hash and routes to its function
 	// if one is registered and if the route has changed since last locate
-	// this is called onhashchange and on load of the page
+	// this is called onhashchange and on load of the page	
   routing.locate = function () {    
     if (routing.hashChanged()) {
       var partials     = w.location.hash.replace("#", "").split(";"),
@@ -105,9 +105,44 @@
       if (partialsLen > 0 && partials[0] !== "") {
         
         for (var i = 0; i < partialsLen; i++) {
-          var query = partials[i].split("?");
-              route = query.shift();
-          if (route in routing.routes && routing.partialChanged(route)) {  
+          var query   = partials[i].split("?");
+              partial = query.shift(),
+              route   = undefined;
+              
+          if (partial in routing.routes) {
+            route = partial;
+          }
+          else if (partial.indexOf("/") !== -1) {
+            for (var r in routing.routes) {
+              if (r.indexOf("/") !== -1) {
+                if (r === partial) {
+                  route = r;
+                  break;
+                }
+                else if (r.indexOf(":") !== -1) {
+                  var n = r.indexOf(":") - 1;
+                  if (r.substr(0, n) === partial.substr(0, n)) {
+                    route = r;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+                            
+          if (route && routing.partialChanged(partial)) {  
+            
+            if (route.indexOf("/") !== -1 && route.indexOf(":") !== -1) {
+              var subRoutes   = route.split("/"),
+                  subPartial  = partial.split("/");
+            
+            	for (var i = 0; i < subRoutes.length; i++ ) {
+            		if (subRoutes[i].indexOf(":") === 0) {
+            			if (subPartial[i]) params[subRoutes[i].replace(":", "")] = subPartial[i];
+            		}
+            	}
+            }
+
             if (query.length > 0 && typeof query[0] !== "undefined") {
               var paramPairs    = query[0].split("&"), 
                   paramPairsLen = paramPairs.length;
@@ -150,8 +185,8 @@
       }
     }
   };
-	
-  // the core wrench app object which wrench.appify begets
+  
+	// the core wrench app object which wrench.appify begets
   // to form a new application with the wrench methods
   var wrenchApp = {
     run: function (force) {
@@ -182,9 +217,8 @@
     }
   };
 	
-  // ----------------- public api ----------------- //
-	
-  // Turn an object into a wrench application
+  // ## public api
+	// Turn an object into a wrench application
   wrench.appify = function (properties) {
     function F() {}
     F.prototype = wrenchApp;
@@ -194,28 +228,26 @@
         app[prop] = properties[prop];
     return app;
   };
-		
+
   // connects a route to a function
   // can be used like so: var users = route("users", function () {});
   // or: var users = route("users").to(function () {});
   // all routed functions will be called with a params hash
-  // as the only argument
+  // as the only argument		
   w.route = function (route, func) {
+    var locate = function (params) {
+      routing.route2Hash(route, params, true);
+    };
+    
     if (typeof func === 'function') {
       routing.routes[route] = func;			
-      return function (params) {
-        routing.route2Hash(route, params, true);
-    //    func(params);
-      };
+      return locate;
     }
     else {
       return {
         to: function (func) { 
           routing.routes[route] = func;
-          return function (params) {
-            routing.route2Hash(route, params, true);
-//            func(params);
-          };
+          return locate;
         } 
       };
     }
