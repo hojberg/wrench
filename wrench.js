@@ -26,14 +26,13 @@
     else {
       return false; 
     } 
-  };
-  
+  };  
       
   // ----------------- routing ----------------- //
   
   // translate a route and some params into the window.location.hash
-  // builds a string for window.location.hash into multiple route fragments if applicable
-  routing.changeRoute = function (route, params, fromForm) {
+  // builds a string for window.location.hash into multiple route partials if applicable
+  routing.route2Hash = function (route, params, fromRoute) {
 		var routeUrl  = route,
         i         = 1;
     if (typeof params !== 'undefined') {
@@ -56,58 +55,70 @@
       route = routeUrl;
     }
     
-    if (fromForm) routing.lastRoute = w.location.hash;
-    else          routing.lastRoute = route;
-    
     w.location.hash = route;		
   };
 
   // find out if window.location.hash has changed
-  routing.lastRoute = "/";
+  // make sure this function can handle multiple calls
+  routing.lastHash = "/";
   routing.hashChanged = function () {
-    var changed = w.location.hash != routing.lastRoute && w.location.hash != "#" + routing.lastRoute;
-    routing.lastRoute = w.location.hash;
+    var changed = w.location.hash != routing.lastHash && w.location.hash != "#" + routing.lastHash;
     return changed;
   };
   
-  // find out if a specific fragment of window.location.hash has changed
-  routing.lastFragments = [];
-  routing.fragmentChanged = function (fragment) {
-    if (routing.hashChanged() && routing.lastFragments.length > 0) {
-      for (var i = 0; i < routing.lastFragments.length; i++) {
-         
+  // find out if a specific partial of window.location.hash has changed
+  routing.partialChanged = function (route) {
+    if (routing.hashChanged()) {
+      var lastPartials    = routing.lastHash.replace("#", "").split(";"),
+          currentPartials = w.location.hash.replace("#", "").split(";");
+          
+      for (var i = 0; i < lastPartials.length; i++) {
+        if (lastPartials[i].indexOf(route) == 0) {
+          var lastPartial = lastPartials[i];
+          break;
+        }
+        else var lastPartial = "";
       }
+
+      for (var i = 0; i < currentPartials.length; i++) {
+        if (currentPartials[i].indexOf(route) == 0) {
+          var currentPartial = currentPartials[i];
+          break;
+        }
+        else var currentPartial = "";
+      }
+      return lastPartial !== currentPartial;
     }
     else return false;
-  }
+  };
 	
 	// looks at the current window.location.hash and routes to its function
 	// if one is registered and if the route has changed since last locate
 	// this is called onhashchange and on load of the page
-  routing.locate = function () {
-    
+  routing.locate = function () {    
     if (routing.hashChanged()) {
-      var fragments     = w.location.hash.replace("#", "").split(";"),
-          fragmentsLen  = fragments.length,
+      var partials     = w.location.hash.replace("#", "").split(";"),
+          partialsLen  = partials.length,
           params        = {}, 
           route         = '';
 		
-      if (fragmentsLen > 0 && fragments[0] !== "") {
+      if (partialsLen > 0 && partials[0] !== "") {
         
-        for (var i = 0; i < fragmentsLen; i++) {
-          var query = fragments[i].split("?");
+        for (var i = 0; i < partialsLen; i++) {
+          var query = partials[i].split("?");
               route = query.shift();
-              
-          if (query.length > 0 && typeof query[0] !== "undefined") {
-            var paramPairs    = query[0].split("&"), 
-                paramPairsLen = paramPairs.length;
+          if (route in routing.routes && routing.partialChanged(route)) {  
+            if (query.length > 0 && typeof query[0] !== "undefined") {
+              var paramPairs    = query[0].split("&"), 
+                  paramPairsLen = paramPairs.length;
                 
-            for (var j = 0; j < paramPairsLen; j++) {
-              params[paramPairs[j].split("=")[0]] = paramPairs[j].split("=")[1];
-            }
+              for (var j = 0; j < paramPairsLen; j++) {
+                params[paramPairs[j].split("=")[0]] = paramPairs[j].split("=")[1];
+              }
             
+            }
+            routing.routes[route](params);		 
           }
-          if (route in routing.routes) routing.routes[route](params);		 
         }
         
       }
@@ -115,6 +126,7 @@
         routing.routes["/"]();
       }
     }
+    routing.lastHash = w.location.hash;
   };
   
   // form elements on the page with '#' as the first
@@ -131,7 +143,7 @@
           for (var j = 0; j < form.elements.length; j++) {
             params[form.elements[j].id] = form.elements[j].value;
           }
-          routing.changeRoute(form.action.replace("#", ""), params, true);
+          routing.route2Hash(form.action.replace("#", ""), params);
           event.preventDefault();
         });
         
@@ -157,7 +169,7 @@
       // fall back to calling the locate function every 250 miliseconds if the
       // browser doesn't have the onhashchange event
       if ("onhashchange" in w) events.add(w, "hashchange", routing.locate);
-      else setInterval(routing.locate, 500);
+      else setInterval(routing.locate, 200);
       
 			// Use force loading if wrench is loaded way after the load event has triggered
       if (force) bootstrap();
@@ -165,8 +177,8 @@
       return app;
     },
     
-    changeRoute: function (route, params) {
-      routing.changeRoute(route, params);
+    route2Hash: function (route, params) {
+      routing.route2Hash(route, params);
     }
   };
 	
@@ -192,8 +204,8 @@
     if (typeof func === 'function') {
       routing.routes[route] = func;			
       return function (params) {
-        routing.changeRoute(route, params);
-        func(params);
+        routing.route2Hash(route, params, true);
+    //    func(params);
       };
     }
     else {
@@ -201,8 +213,8 @@
         to: function (func) { 
           routing.routes[route] = func;
           return function (params) {
-            routing.changeRoute(route, params);
-            func(params);
+            routing.route2Hash(route, params, true);
+//            func(params);
           };
         } 
       };

@@ -24,9 +24,9 @@ module("Core");
 		equal(app.bar, "baz", "run should run the init() function and add the property bar");
 	});
 	
-module("Routing", {setup: clearFragment, teardown: clearFragment});
+module("Routing", {setup: clearHash, teardown: clearHash});
 
-  function clearFragment() {
+  function clearHash() {
     window.location.hash = '';
   };
 
@@ -44,24 +44,24 @@ module("Routing", {setup: clearFragment, teardown: clearFragment});
     equal(app.foobarRoute, "ran", "should have executed the route function");
   });
   
-  test("should run 2 route fragments", function () {
+  test("should run 2 route partials", function () {
     expect(2);
   	var app = wrench.appify({
   	  init: function () {
-  	    app.fragments = 0;
+  	    app.partials = 0;
   	  },
-  	  fragmentOne: route("fragmentone/foo").to(function () {
-  	    app.fragments++;
+  	  partialOne: route("partialone/foo").to(function () {
+  	    app.partials++;
   	  }),
-  	  fragmentTwo: route("fragmenttwo/bar").to(function () {
-        app.fragments++;
+  	  partialTwo: route("partialtwo/bar").to(function () {
+        app.partials++;
   	  })
   	});
   	app.run(true);
   	
-  	equal(app.fragments, 0, "no fragment routes should be excecuted");
-  	window.location.hash = "fragmentone/foo;fragmenttwo/bar";
-    equal(app.fragments, 2, "both fragment routes should be excecuted");
+  	equal(app.partials, 0, "no partial routes should be excecuted");
+  	window.location.hash = "partialone/foo;partialtwo/bar";
+    equal(app.partials, 2, "both partial routes should be excecuted");
   });
   
   test("should create a params hash and pass it to the route function", function () {
@@ -94,6 +94,27 @@ module("Routing", {setup: clearFragment, teardown: clearFragment});
     // ok(typeof app.params !== 'undefined', "app.params should now exist");
     // equal(app.params["view"], "all", "app.params['view'] should exist and contain 'all'");
     // window.location.hash = "";
+  });
+  
+  test("should only run a the route of the partial that was changed", function () {
+    expect(3);
+   	var app = wrench.appify({
+   	  init: function () {
+   	    app.partials = 0;
+   	  },
+   	  partialOne: route("partialone/foo").to(function () {
+   	    app.partials++;
+   	  }),
+   	  partialTwo: route("partialtwo/bar").to(function () {
+         app.partials++;
+   	  })
+   	});
+   	app.run(true);
+   	equal(app.partials, 0, "no partial routes should be excecuted");
+   	window.location.hash = "partialone/foo;partialtwo/bar";
+    equal(app.partials, 2, "both partial routes should be excecuted");    
+   	window.location.hash = "partialone/foo;partialtwo/bar?foo=bar";
+    equal(app.partials, 3, "on partialtwo should run now partial routes should be excecuted");
   });
   
   test("a call to a routed function should change location.hash", function () {

@@ -28,8 +28,8 @@ Set up a simple application that shows users
 	});
 	app.run();
 		
-You can also do fragmented routes. Say you have 2 panes in you application. A list and a show pane.
-Each pane can be in different states, these states can be saved with fragmented routes like so:
+You can also do partial routes. Say you have 2 panes in you application. A list and a show pane.
+Each pane can be in different states, these states can be saved with partial routes like so:
 
 	var mailapp = wrench.appify({
 		init: function () {
@@ -46,7 +46,7 @@ Each pane can be in different states, these states can be saved with fragmented 
 	});
 	app.run();
 
-If both route fragments are active this will result in the following url: http://myapp.com/app#list/inbox;show/312
+If both route partials are active this will result in the following url: http://myapp.com/app#list/inbox;show/312
 Where "inbox" will be found in params['mailbox'] available function and "321" will be found in params['id'] 
 available in the show function
 
