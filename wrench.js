@@ -61,7 +61,7 @@
 				
     if (w.location.hash !== "" && 
         w.location.hash !== "#" && 
-        w.location.hash.indexOf(route) === -1) {
+        (w.location.hash.indexOf(route.substr(0, route.indexOf(":") - 1 )) === -1)) {
       route = w.location.hash + ";" + hash;
     }
     else {
