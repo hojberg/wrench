@@ -1,5 +1,6 @@
 // By Simon Nielsen
-
+/*globals window document setInterval */
+"use strict";
 (function () {
   var wrench  = {},
       routing = {routes: {}},
@@ -32,14 +33,27 @@
   // translate a route and some params into the window.location.hash
   // builds a string for window.location.hash into multiple route partials if applicable
   routing.route2Hash = function (route, params, fromRoute) {
-		var routeUrl  = route,
-        i         = 1;
+		var hash  = route,
+        i     = 1;
     if (typeof params !== 'undefined') {
-      routeUrl += "?";
+      
+      if (route.indexOf("/") !== -1 && route.indexOf(":") !== -1) {
+        var r = route.split("/");        
+        for (var j = 0; j < r.length; j++) {
+          if (r[j].indexOf(":") === 0) {
+            if (r[j].substr(1) in params) {
+              hash = hash.replace(r[j], params[r[j].substr(1)]);
+              delete params[r[j].substr(1)];
+            }
+          }  
+        }                
+      }
+      
       for (var param in params) {
         if (params.hasOwnProperty(param)) {
-          if (i !== 1) routeUrl += "&";
-          routeUrl += param + "=" + params[param];
+          if (i !== 1)  { hash += "&"; }
+          else          { hash += "?"; }
+          hash += param + "=" + params[param];
           i++;
         }
       }
@@ -48,10 +62,10 @@
     if (w.location.hash !== "" && 
         w.location.hash !== "#" && 
         w.location.hash.indexOf(route) === -1) {
-      route = w.location.hash + ";" + routeUrl;
+      route = w.location.hash + ";" + hash;
     }
     else {
-      route = routeUrl;
+      route = hash;
     }
     
     w.location.hash = route;		
@@ -70,26 +84,26 @@
     
     if (routing.hashChanged()) {
       var lastPartials    = routing.lastHash.replace("#", "").split(";"),
-          currentPartials = w.location.hash.replace("#", "").split(";");
+          currentPartials = w.location.hash.replace("#", "").split(";"),
+          lastPartial     = "",
+          currentPartial  = "";
           
       for (var i = 0; i < lastPartials.length; i++) {
-        if (lastPartials[i].indexOf(route) == 0) {
-          var lastPartial = lastPartials[i];
+        if (lastPartials[i].indexOf(route) === 0) {
+          lastPartial = lastPartials[i];
           break;
         }
-        else var lastPartial = "";
       }
 
-      for (var i = 0; i < currentPartials.length; i++) {
-        if (currentPartials[i].indexOf(route) == 0) {
-          var currentPartial = currentPartials[i];
+      for (var j = 0; j < currentPartials.length; j++) {
+        if (currentPartials[j].indexOf(route) === 0) {
+          currentPartial = currentPartials[j];
           break;
         }
-        else var currentPartial = "";
       }
       return lastPartial !== currentPartial;
     }
-    else return false;
+    else { return false; }
   };
   
   // looks at the current window.location.hash and routes to its function
@@ -100,14 +114,13 @@
       var partials     = w.location.hash.replace("#", "").split(";"),
           partialsLen  = partials.length,
           params        = {}, 
-          route         = '';
+          route         = "";
 		
       if (partialsLen > 0 && partials[0] !== "") {
         
         for (var i = 0; i < partialsLen; i++) {
-          var query   = partials[i].split("?");
-              partial = query.shift(),
-              route   = undefined;
+          var query   = partials[i].split("?"),
+              partial = query.shift();
               
           if (partial in routing.routes) {
             route = partial;
@@ -130,25 +143,25 @@
             }
           }
                             
-          if (route && routing.partialChanged(partial)) {  
+          if (route !== "" && routing.partialChanged(partial)) {  
             
             if (route.indexOf("/") !== -1 && route.indexOf(":") !== -1) {
               var subRoutes   = route.split("/"),
                   subPartial  = partial.split("/");
             
-            	for (var i = 0; i < subRoutes.length; i++ ) {
-            		if (subRoutes[i].indexOf(":") === 0) {
-            			if (subPartial[i]) params[subRoutes[i].replace(":", "")] = subPartial[i];
-            		}
-            	}
+              for (var j = 0; j < subRoutes.length; j++) {
+                if (subRoutes[j].indexOf(":") === 0 && subPartial[j]) {
+                  params[subRoutes[j].replace(":", "")] = subPartial[j];
+                }
+              }
             }
 
             if (query.length > 0 && typeof query[0] !== "undefined") {
               var paramPairs    = query[0].split("&"), 
                   paramPairsLen = paramPairs.length;
                 
-              for (var j = 0; j < paramPairsLen; j++) {
-                params[paramPairs[j].split("=")[0]] = paramPairs[j].split("=")[1];
+              for (var k = 0; k < paramPairsLen; k++) {
+                params[paramPairs[k].split("=")[0]] = paramPairs[k].split("=")[1];
               }
             
             }
@@ -168,20 +181,20 @@
   // character in the action attribute gets a onsubmit event added
   // TODO: find a solution for live adding of onsubmit events if
   // the user adds a form to the page after load.
-  routing.attachFormRoutes = function () {
-    for (var i = 0; i < d.forms.length; i++) {
-      var form    = d.forms[i], 
+  routing.attachFormRoutes = function () {    
+    var handler = function (event) {
+      var form    = event.target,
           params  = {};
-      if (form.action.indexOf("#") == 0) {
-        
-        events.add(form, "submit", function (event) {
-          for (var j = 0; j < form.elements.length; j++) {
-            params[form.elements[j].id] = form.elements[j].value;
-          }
-          routing.route2Hash(form.action.replace("#", ""), params);
-          event.preventDefault();
-        });
-        
+      for (var j = 0; j < form.elements.length; j++) {
+        params[form.elements[j].id] = form.elements[j].value;
+      }
+      routing.route2Hash(form.action.replace("#", ""), params);
+      event.preventDefault();
+    };
+    
+    for (var i = 0; i < d.forms.length; i++) {
+      if (d.forms[i].action.indexOf("#") === 0) {        
+        events.add(d.forms[i], "submit", handler);        
       }
     }
   };
@@ -195,7 +208,7 @@
       var bootstrap = function () {
         routing.locate();
         routing.attachFormRoutes();        
-        if (typeof app.init === 'function') app.init();
+        if (typeof app.init === 'function') { app.init(); }
       };      
 
       // attach event listeners
@@ -203,11 +216,11 @@
       
       // fall back to calling the locate function every 250 miliseconds if the
       // browser doesn't have the onhashchange event
-      if ("onhashchange" in w) events.add(w, "hashchange", routing.locate);
-      else setInterval(routing.locate, 200);
+      if ("onhashchange" in w) { events.add(w, "hashchange", routing.locate); }
+      else { setInterval(routing.locate, 200); }
       
 			// Use force loading if wrench is loaded way after the load event has triggered
-      if (force) bootstrap();
+      if (force) { bootstrap(); }
 
       return app;
     },
@@ -223,9 +236,11 @@
     function F() {}
     F.prototype = wrenchApp;
     var app = new F();
-    for (var prop in properties)
-      if (properties.hasOwnProperty(prop))
+    for (var prop in properties) {
+      if (properties.hasOwnProperty(prop)) {
         app[prop] = properties[prop];
+      }
+    }
     return app;
   };
 

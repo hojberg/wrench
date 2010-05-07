@@ -107,6 +107,19 @@ module("Routing", {setup: clearHash, teardown: clearHash});
     equal(app.params["id"], "432", "app.params['id'] should exist and contain '432'");
   });
   
+  test("should create a hash with named params from route2Hash", function () {
+    expect(1);
+    var app = wrench.appify({
+      list: route("list/:view").to(function (params) {
+        app.params = params;
+      })
+    });
+    app.run(true);
+    
+    app.list({'view': 'all'});
+    equal(window.location.hash, "#list/all", "window.location.hash should be '#list/all'");    
+  });
+  
   test("should only run a the route of the partial that was changed", function () {
     expect(3);
    	var app = wrench.appify({
