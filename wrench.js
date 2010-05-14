@@ -1,6 +1,3 @@
-//By Simon Nielsen
-/*globals window document setInterval */
-"use strict";
 (function () {
   var wrench  = {},
       routing = {routes: {}, lastHash: "/"},
@@ -9,6 +6,22 @@
       d       = document;
 
   wrench.VERSION = "0.0.1";
+
+
+  // Clone object
+  var cloneObject = function (o, properties) {
+    function F() {};
+    F.prototype = o;
+    var clone = new F();
+    if (properties) {
+      for (var prop in properties) {
+        if (properties.hasOwnProperty(prop)) {
+          clone[prop] = properties[prop];
+        }
+      }
+    }
+    return clone;
+  };
 
   // ## Events
   // Cross browser compatible event handling
@@ -34,9 +47,10 @@
   // window.location.hash. This will build a string for
   // window.location.hash into multiple route
   // partials if applicable.
-  routing.route2Hash = function (route, params) {
-    var hash  = route,
-        i     = 1;
+  routing.route2Hash = function (route, parameters, dontLocate) {    
+    var hash   = route,
+        i      = 1,
+        params = cloneObject(parameters);
 
 		// Set params in new partial string to be added to hash.
 		// e.g. 'myroute/:param1/:param2?param3=42&param4=foo
@@ -56,7 +70,7 @@
         }
       }
 
-			// The remaining params are just normal urlencoded parameters
+			// The remaining params are just normal urlencoded params
 			// e.g. 'myroute?a=42&b=foo'
       for (var param in params) {
         if (params.hasOwnProperty(param)) {
@@ -67,19 +81,36 @@
         }
       }
     }
-
-    if (w.location.hash !== "" &&
-        w.location.hash !== "#" &&
-        (w.location.hash.indexOf(route.substr(0, route.indexOf(":") - 1 )) === -1)) {
-			// Added the new partial
-			// TODO: added den ikke bare... skal den ikke fjerne en eksisternede partial med samme route?
-      route = w.location.hash + ";" + hash;
+  
+    var newHash = "";
+    // window.location.hash is blank
+    if (w.location.hash === '' || w.location.hash === '#') {
+      newHash = hash;
     }
     else {
-      route = hash;
-    }
+      // find out if we should replace a partial in window.location.hash or just add to it
+      // window.location.hash does not include the partial route. Add the partial
+      var newRoute        = w.location.hash,
+          routePrefix     = route,
+          namedPartialPos = route.indexOf(":");
 
-    w.location.hash = route;
+      if (namedPartialPos !== -1) {
+        routePrefix = route.substr(0, namedPartialPos - 1);
+      }
+
+      var prefixRegexp = new RegExp(routePrefix + "[^;]*");
+      newHash = newRoute.replace(prefixRegexp, hash);
+
+      // nothing was found or replaced, just add the hash
+      if (newHash === w.location.hash && !prefixRegexp.test(newHash)) {
+        newHash = newHash + ";" + hash;
+      }
+    }
+   
+    if (dontLocate) routing.lastHash = hash;
+    else routing.lastHash = w.location.hash;
+
+    w.location.hash = newHash;
   };
 
   // find out if window.location.hash has changed
@@ -112,6 +143,9 @@
           break;
         }
       }
+
+      console.log("partial '" + route + "' changed?: " + (lastPartial !== currentPartial).toString());
+      console.log("last: " + lastPartial + " || current: " + currentPartial);
       return lastPartial !== currentPartial;
     }
     else { return false; }
@@ -136,7 +170,7 @@
 				// Handle each partial route
         for (var i = 0; i < numberOfPartials; i++) {
 
-					// Each route can have parameters encoded like url paramters using
+					// Each route can have params encoded like url paramters using
 					// e.g "myroute?foo=32&bar=goo"
           var query   = partials[i].split("?"),
               partial = query.shift(),
@@ -164,7 +198,7 @@
 					// Only call route function if the partial has actually changed
           if (route !== "" && routing.partialChanged(partial)) {
 
-						// Handle	':foo' route parameters by matching the route and partial
+						// Handle	':foo' route params by matching the route and partial
 						// e.g. 'myroute/:var1/:var2' and 'myroute/42/77'
             if (route.indexOf("/") !== -1 && route.indexOf(":") !== -1) {
               var subRoutes   = route.split("/"),
@@ -177,7 +211,7 @@
               }
             }
 
-						// The partial may provide normal parameters using
+						// The partial may provide normal params using
 						// 'myroute?a=32' syntax.
             if (query.length > 0 && typeof query[0] !== "undefined") {
               var paramPairs    = query[0].split("&"),
@@ -188,6 +222,9 @@
               }
 
             }
+
+            // Call the located route
+            console.log("calling route: " + route);
             routing.routes[route](params);
           }
         }
@@ -260,15 +297,7 @@
   // ## public api
 	// Turn an object into a wrench application
   wrench.appify = function (properties) {
-    function F() {}
-    F.prototype = wrenchApp;
-    var app = new F();
-    for (var prop in properties) {
-      if (properties.hasOwnProperty(prop)) {
-        app[prop] = properties[prop];
-      }
-    }
-    return app;
+    return cloneObject(wrenchApp, properties);
   };
 
   // connects a route to a function
@@ -278,19 +307,21 @@
   // all routed functions will be called with a
   // params hash as the only argument
   w.route = function (route, func) {
-    var locate = function (params) {
-      routing.route2Hash(route, params);
-    };
-
     if (typeof func === 'function') {
       routing.routes[route] = func;
-      return locate;
+      return function (params) {
+        routing.route2Hash(route, params, true);
+        func.apply(null, arguments);
+      };
     }
     else {
       return {
         to: function (func) {
           routing.routes[route] = func;
-          return locate;
+          return function (params) {
+            routing.route2Hash(route, params, true);
+            func.apply(null, arguments);
+          };
         }
       };
     }

@@ -24,9 +24,9 @@ module("Core");
 		equal(app.bar, "baz", "run should run the init() function and add the property bar");
 	});
 	
-module("Routing", {setup: clearHash, teardown: clearHash});
+module("Routing", {setup: reset, teardown: reset});
 
-  function clearHash() {
+  function reset() {
     window.location.hash = '';
   };
 
@@ -45,7 +45,7 @@ module("Routing", {setup: clearHash, teardown: clearHash});
   });
   
   test("should run 2 route partials", function () {
-    expect(2);
+    expect(3);
   	var app = wrench.appify({
   	  init: function () {
   	    app.partials = 0;
@@ -62,6 +62,7 @@ module("Routing", {setup: clearHash, teardown: clearHash});
   	equal(app.partials, 0, "no partial routes should be excecuted");
   	window.location.hash = "partialone/foo;partialtwo/bar";
     equal(app.partials, 2, "both partial routes should be excecuted");
+    equal(window.location.hash, "#partialone/foo;partialtwo/bar");
   });
   
   test("should create a params hash and pass it to the route function", function () {
@@ -141,6 +142,22 @@ module("Routing", {setup: clearHash, teardown: clearHash});
     equal(app.partials, 3, "on partialtwo should run now partial routes should be excecuted");
   });
   
+  test("a call to a routed function should get a params object", function () {
+    expect(4);
+    var app = wrench.appify({
+      list: route("list/:view").to(function (params) {
+        app.params = params;
+      })
+    });
+    app.run(true);
+    
+    app.list({'view': 'inbox'});
+    equal(window.location.hash, "#list/inbox", "location.hash should be equal to '#list/inbox'");
+    ok("params" in app, "the params object should exist in app");
+    ok('view' in app.params, "'view' should exist in app.params")
+    equal(app.params['view'], 'inbox', "app.params['view'] should be 'inbox'");
+  });
+  
   test("a call to a routed function should change location.hash", function () {
     expect(2);
     var app = wrench.appify({
@@ -155,8 +172,43 @@ module("Routing", {setup: clearHash, teardown: clearHash});
     equal(window.location.hash, "#foo/bar", "location.hash should be equal to '#foo/bar'");
     equal(app.numberOfRuns,     1,          "the routeOne function should only be ran once");
   });
+
+  test("a call to a routed function should change location.hash partial if exists", function () {
+    expect(3);
+    var app = wrench.appify({
+      listCalled: 0,
+      showCalled: 0,
+      list: route("list/:view").to(function (params) {
+        console.log("list called");
+        app.listCalled++;
+      }),
+      show: route('show/:id').to(function (params) {
+        console.log("show called");
+        app.showCalled++;
+      })      
+    });
+    app.run(true);
+    
+    app.list({'view': 'all'});
+      console.log("");
+    equal(window.location.hash, "#list/all", "location.hash should be equal to '#list/all'");
+    equal(app.listCalled, 1, 'list should have been called once');
+
+    app.show({'id': '84821'});
+      console.log("");
+    equal(window.location.hash, "#list/all;show/84821", "location.hash should be equal to '#list/all;show/82821'");
+    equal(app.listCalled, 1, 'list should still only have been called once');
+    equal(app.showCalled, 1, 'show should have been called once');
+
+
+    app.list({'view': 'failed'});
+      console.log("");
+    equal(window.location.hash, "#list/failed;show/84821", "location.hash should be equal to '#list/failed;show/84821'");
+    equal(app.listCalled, 2, 'list should now have been called twice');
+    equal(app.showCalled, 1, 'show should still only have been called once');
+  });
   
-  test("should add route event handler to all forms with a # in the action", function () {
+  test("should add route event handler to all forms with a # in the action", function () {   
     expect(6);
     var app = wrench.appify({
       numberOfRuns: 0,
