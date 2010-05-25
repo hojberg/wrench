@@ -1,31 +1,41 @@
 (function () {
   var wrench  = {},
       routing = {routes: {}, lastHash: "/"},
-      events  = {},
+      evento  = {},
       w       = window,
       d       = document;
 
   wrench.VERSION = "0.0.1";
 
 
-  // Clone object
-  var cloneObject = function (o, properties) {
+  // beget object
+  var begetObject = function (o, properties) {
     function F() {};
     F.prototype = o;
-    var clone = new F();
+    var n = new F();
     if (properties) {
       for (var prop in properties) {
         if (properties.hasOwnProperty(prop)) {
-          clone[prop] = properties[prop];
+          n[prop] = properties[prop];
         }
       }
     }
-    return clone;
+    return n;
+  };
+  
+  var cloneObject = function (o) {
+    var c = {};
+    for (var prop in o) {
+      if (o.hasOwnProperty(prop)) {
+        c[prop] = o[prop];
+      }
+    }
+    return c;
   };
 
   // ## Events
   // Cross browser compatible event handling
-  events.add = function (element, eventType, handler) {
+  evento.add = function (element, eventType, handler) {
     if (element.addEventListener) {
       element.addEventListener(eventType, handler, false);
       return true;
@@ -47,7 +57,7 @@
   // window.location.hash. This will build a string for
   // window.location.hash into multiple route
   // partials if applicable.
-  routing.route2Hash = function (route, parameters, dontLocate) {    
+  routing.route2Hash = function (route, parameters) {    
     var hash   = route,
         i      = 1,
         params = cloneObject(parameters);
@@ -107,9 +117,6 @@
       }
     }
    
-    if (dontLocate) routing.lastHash = hash;
-    else routing.lastHash = w.location.hash;
-
     w.location.hash = newHash;
   };
 
@@ -144,8 +151,6 @@
         }
       }
 
-      console.log("partial '" + route + "' changed?: " + (lastPartial !== currentPartial).toString());
-      console.log("last: " + lastPartial + " || current: " + currentPartial);
       return lastPartial !== currentPartial;
     }
     else { return false; }
@@ -159,12 +164,10 @@
 
 		// Only locate if the hash hash changed
     if (routing.hashChanged()) {
-
 			// The hash may consist of many routes called partial routes delimited by ';'.
 			// e.g. 'route1?a=b;route2?uu=32..."
       var partials          = w.location.hash.replace("#", "").split(";"),
           numberOfPartials  = partials.length;
-
       if (numberOfPartials > 0 && partials[0] !== "") {
 
 				// Handle each partial route
@@ -224,7 +227,6 @@
             }
 
             // Call the located route
-            console.log("calling route: " + route);
             routing.routes[route](params);
           }
         }
@@ -256,7 +258,7 @@
 
     for (var i = 0; i < forms.length; i++) {
       if (forms[i].action.indexOf("#") === 0) {
-        events.add(forms[i], "submit", handler);
+        evento.add(forms[i], "submit", handler);
       }
     }
   };
@@ -274,12 +276,12 @@
       };
 
       // attach event listeners
-      events.add(d, "DOMContentLoaded", bootstrap);
+      evento.add(d, "DOMContentLoaded", bootstrap);
 
       // fall back to calling the locate function
       // every 250 miliseconds if the browser
       // doesn't have the onhashchange event
-      if ("onhashchange" in w) { events.add(w, "hashchange", routing.locate); }
+      if ("onhashchange" in w) { evento.add(w, "hashchange", routing.locate); }
       else { setInterval(routing.locate, 200); }
 
 			// Use force loading if wrench is loaded way
@@ -297,7 +299,7 @@
   // ## public api
 	// Turn an object into a wrench application
   wrench.appify = function (properties) {
-    return cloneObject(wrenchApp, properties);
+    return begetObject(wrenchApp, properties);
   };
 
   // connects a route to a function
@@ -310,7 +312,7 @@
     if (typeof func === 'function') {
       routing.routes[route] = func;
       return function (params) {
-        routing.route2Hash(route, params, true);
+        routing.route2Hash(route, params);
         func.apply(null, arguments);
       };
     }
@@ -319,7 +321,7 @@
         to: function (func) {
           routing.routes[route] = func;
           return function (params) {
-            routing.route2Hash(route, params, true);
+            routing.route2Hash(route, params);
             func.apply(null, arguments);
           };
         }
