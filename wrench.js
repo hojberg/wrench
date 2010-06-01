@@ -66,8 +66,8 @@
     // e.g. 'myroute/:param1/:param2?param3=42&param4=foo
     if (typeof params !== 'undefined') {
 
-			// First set the 'myroute/:param1/:param2' style paramters
-			// as specified by the route
+      // First set the 'myroute/:param1/:param2' style paramters
+      // as specified by the route
       if (route.indexOf("/") !== -1 && route.indexOf(":") !== -1) {
         var r = route.split("/");
         for (var j = 0; j < r.length; j++) {
