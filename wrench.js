@@ -62,8 +62,8 @@
         i      = 1,
         params = cloneObject(parameters);
 
-		// Set params in new partial string to be added to hash.
-		// e.g. 'myroute/:param1/:param2?param3=42&param4=foo
+    // Set params in new partial string to be added to hash.
+    // e.g. 'myroute/:param1/:param2?param3=42&param4=foo
     if (typeof params !== 'undefined') {
 
 			// First set the 'myroute/:param1/:param2' style paramters
@@ -80,8 +80,8 @@
         }
       }
 
-			// The remaining params are just normal urlencoded params
-			// e.g. 'myroute?a=42&b=foo'
+      // The remaining params are just normal urlencoded params
+      // e.g. 'myroute?a=42&b=foo'
       for (var param in params) {
         if (params.hasOwnProperty(param)) {
           if (i !== 1)  { hash += "&"; }
@@ -136,7 +136,6 @@
           lastPartial     = "",
           currentPartial  = "";
 
-			// TODO: det betyder man ikke kan have en route 'foo' og en 'foobar'?
       for (var i = 0; i < lastPartials.length; i++) {
         if (lastPartials[i].indexOf(route) === 0) {
           lastPartial = lastPartials[i];
@@ -156,53 +155,53 @@
     else { return false; }
   };
 
-	// This function is called on 'onhashchange' and on load of the page
+  // This function is called on 'onhashchange' and on load of the page
   // Inspects the current window.location.hash to identify routes.
-	// Only handles a route if it has changed since last call to locate.
+  // Only handles a route if it has changed since last call to locate.
   // If any of the routes are registered then call the matching funcion of that route.
   routing.locate = function () {
 
-		// Only locate if the hash hash changed
+    // Only locate if the hash hash changed
     if (routing.hashChanged()) {
-			// The hash may consist of many routes called partial routes delimited by ';'.
-			// e.g. 'route1?a=b;route2?uu=32..."
+      // The hash may consist of many routes called partial routes delimited by ';'.
+      // e.g. 'route1?a=b;route2?uu=32..."
       var partials          = w.location.hash.replace("#", "").split(";"),
           numberOfPartials  = partials.length;
       if (numberOfPartials > 0 && partials[0] !== "") {
 
-				// Handle each partial route
+        // Handle each partial route
         for (var i = 0; i < numberOfPartials; i++) {
 
-					// Each route can have params encoded like url paramters using
-					// e.g "myroute?foo=32&bar=goo"
+          // Each route can have params encoded like url paramters using
+          // e.g "myroute?foo=32&bar=goo"
           var query   = partials[i].split("?"),
               partial = query.shift(),
               params  = {},
               route   = "";
 
-					// First check if the is a simple route that can be found
-					// the in the routing registry directly e.g. 'myroute'
+          // First check if the is a simple route that can be found
+          // the in the routing registry directly e.g. 'myroute'
           if (partial in routing.routes) {
             route = partial;
           }
-					// If it is not a simple route it may be on the form 'myroute/
+          // If it is not a simple route it may be on the form 'myroute/
           else if (partial.indexOf("/") !== -1) {
             for (var r in routing.routes) {
-                if (r.indexOf(":") !== -1) {
-                  var n = r.indexOf(":") - 1;
-                  if (r.substr(0, n) === partial.substr(0, n)) {
-                    route = r;
-                    break;
-								}
+              if (r.indexOf(":") !== -1) {
+                var n = r.indexOf(":") - 1;
+                if (r.substr(0, n) === partial.substr(0, n)) {
+                  route = r;
+                  break;
+                }
               }
             }
           }
 
-					// Only call route function if the partial has actually changed
+          // Only call route function if the partial has actually changed
           if (route !== "" && routing.partialChanged(partial)) {
 
-						// Handle	':foo' route params by matching the route and partial
-						// e.g. 'myroute/:var1/:var2' and 'myroute/42/77'
+            // Handle	':foo' route params by matching the route and partial
+            // e.g. 'myroute/:var1/:var2' and 'myroute/42/77'
             if (route.indexOf("/") !== -1 && route.indexOf(":") !== -1) {
               var subRoutes   = route.split("/"),
                   subPartial  = partial.split("/");
@@ -214,8 +213,8 @@
               }
             }
 
-						// The partial may provide normal params using
-						// 'myroute?a=32' syntax.
+            // The partial may provide normal params using
+            // 'myroute?a=32' syntax.
             if (query.length > 0 && typeof query[0] !== "undefined") {
               var paramPairs    = query[0].split("&"),
                   paramPairsLen = paramPairs.length;
@@ -233,7 +232,7 @@
 
       }
       else if ("/" in routing.routes) {
-				// Call the default route if none specified by the hash
+        // Call the default route if none specified by the hash
         routing.routes["/"]();
       }
     }
@@ -263,7 +262,7 @@
     }
   };
 
-	// the core wrench app object which wrench.appify uses
+  // the core wrench app object which wrench.appify uses
   // to form a new application with the wrench methods
   var wrenchApp = {
     run: function (force) {
@@ -284,8 +283,8 @@
       if ("onhashchange" in w) { evento.add(w, "hashchange", routing.locate); }
       else { setInterval(routing.locate, 200); }
 
-			// Use force loading if wrench is loaded way
-			// after the load event has triggered
+      // Use force loading if wrench is loaded way
+      // after the load event has triggered
       if (force) { bootstrap(); }
 
       return app;
@@ -297,7 +296,7 @@
   };
 
   // ## public api
-	// Turn an object into a wrench application
+  // Turn an object into a wrench application
   wrench.appify = function (properties) {
     return begetObject(wrenchApp, properties);
   };
