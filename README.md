@@ -17,11 +17,11 @@ Set up a simple application that shows users
 		},
 		
 		users: {
-			list: route("/users/list/").to(function () {
+			list: route("users/list/").to(function () {
 				// fetch all the users and show them on the page
 			}),
 			
-			show: route("/users/show/:id").to(function (params) {
+			show: route("users/show/:id").to(function (params) {
 				// find the user via params['id']
 			})
 		}
