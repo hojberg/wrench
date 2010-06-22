@@ -1,10 +1,12 @@
 module("Core");
 
-	test("Public API exists", 4, function () {
+	test("Public API exists", 6, function () {
 		ok(wrench, "wrench global object should exist");
-		equal(typeof route,         "function", "route global function should exist");
-    equal(typeof route().to,    "function", "route should return an object with the to function");
-		equal(typeof wrench.appify, "function", "wrench.appify function should exist");
+		equal(typeof route,             "function", "route global function should exist");
+    equal(typeof routePartial,      "function", "route global function should exist");
+    equal(typeof route().to,        "function", "route should return an object with the to function");
+    equal(typeof routePartial().to, "function", "routePartial should return an object with the to function");
+		equal(typeof wrench.appify,     "function", "wrench.appify function should exist");
 	});
 	
   
@@ -21,15 +23,78 @@ module("Core");
 		equal(app.bar, "baz", "run should run the init() function and add the property bar");
 	});
 	
+	
 module("Routing", {setup: reset, teardown: reset});
 
   function reset() {
     window.location.hash = '';
   };
+  
+  // full routing
+  
+  test("2 full route calls should result in 1 URL", 6, function () {
+  	var app = wrench.appify({
+  	  foo: route("foo/bar").to(function () {
+  	    app.foobarRoute = "ran";
+  	  }),
+  	  
+  	  bar: route("bar/baz").to(function () {
+  	    app.barbazRoute = "ran";
+  	  })
+  	});
+  	app.run(true);
+  	
+  	equal(typeof app.foobarRoute, "undefined");
+    equal(typeof app.barbazRoute, "undefined");
+    
+    app.foo();
+    equal(window.location.hash, "#foo/bar");
+    equal(app.foobarRoute, "ran");
+    
+    app.bar();
+    equal(window.location.hash, "#bar/baz");
+    equal(app.barbazRoute, "ran");
+  });
+  
+  
+  // Partial routing
+  
+  test("calling a partial route on a full route should remove the full", 9, function () {
+  	var app = wrench.appify({
+  	  foo: route("foo/bar").to(function () {
+  	    app.foobarRoute = "ran";
+  	  }),
+  	  
+  	  bar: routePartial("bar/baz").to(function () {
+  	    app.barbazRoute = "ran";
+  	  }),
+  	  
+  	  baz: routePartial("baz/bob").to(function () {
+  	    app.bazbobRoute = "ran";
+  	  }),
+  	});
+  	app.run(true);
+  	
+  	equal(typeof app.foobarRoute, "undefined");
+    equal(typeof app.barbazRoute, "undefined");
+    equal(typeof app.bazbobRoute, "undefined");
+    
+    app.foo();
+    equal(window.location.hash, "#foo/bar");
+    equal(app.foobarRoute, "ran");
+    
+    app.bar();
+    equal(window.location.hash, "#bar/baz");
+    equal(app.barbazRoute, "ran");
+    
+    app.baz();
+    equal(window.location.hash, "#bar/baz;#baz/bob");
+    equal(app.bazbobRoute, "ran");
+  });
 
   asyncTest("add #foo/bar route", 2, function () {
   	var app = wrench.appify({
-  	  foo: route("foo/bar").to(function () {
+  	  foo: routePartial("foo/bar").to(function () {
   	    app.foobarRoute = "ran";
   	  })
   	});
@@ -48,10 +113,10 @@ module("Routing", {setup: reset, teardown: reset});
   	  init: function () {
   	    app.partials = 0;
   	  },
-  	  partialOne: route("partialone/foo").to(function () {
+  	  partialOne: routePartial("partialone/foo").to(function () {
   	    app.partials++;
   	  }),
-  	  partialTwo: route("partialtwo/bar").to(function () {
+  	  partialTwo: routePartial("partialtwo/bar").to(function () {
         app.partials++;
   	  })
   	});
@@ -68,7 +133,7 @@ module("Routing", {setup: reset, teardown: reset});
   
   asyncTest("should create a params hash and pass it to the route function", 4, function () {
     var app = wrench.appify({
-      paramsRoute: route("foo/bar").to(function (params) {
+      paramsRoute: routePartial("foo/bar").to(function (params) {
         app.params = params;
       })
     });
@@ -87,10 +152,10 @@ module("Routing", {setup: reset, teardown: reset});
   
   asyncTest("should create params from a named params route", 7, function () {
     var app = wrench.appify({
-      list: route("list/:view").to(function (params) {
+      list: routePartial("list/:view").to(function (params) {
         app.params = params;
       }),
-      show: route("show/:section/:id").to(function (params) {
+      show: routePartial("show/:section/:id").to(function (params) {
         app.params = params;
       })
     });
@@ -124,7 +189,7 @@ module("Routing", {setup: reset, teardown: reset});
   
   test("should create a hash with named params from route2Hash", 1, function () {
     var app = wrench.appify({
-      list: route("list/:view").to(function (params) {
+      list: routePartial("list/:view").to(function (params) {
         app.params = params;
       })
     });
@@ -139,10 +204,10 @@ module("Routing", {setup: reset, teardown: reset});
    	  init: function () {
    	    app.partials = 0;
    	  },
-   	  partialOne: route("partialone/foo").to(function () {
+   	  partialOne: routePartial("partialone/foo").to(function () {
    	    app.partials++;
    	  }),
-   	  partialTwo: route("partialtwo/bar").to(function () {
+   	  partialTwo: routePartial("partialtwo/bar").to(function () {
          app.partials++;
    	  })
    	});
@@ -163,7 +228,7 @@ module("Routing", {setup: reset, teardown: reset});
   
   test("a call to a routed function should get a params object", 4, function () {
     var app = wrench.appify({
-      list: route("list/:view").to(function (params) {
+      list: routePartial("list/:view").to(function (params) {
         app.params = params;
       })
     });
@@ -179,7 +244,7 @@ module("Routing", {setup: reset, teardown: reset});
   test("a call to a routed function should change location.hash", 2, function () {
     var app = wrench.appify({
       numberOfRuns: 0,
-      routeOne: route("foo/bar").to(function () {
+      routeOne: routePartial("foo/bar").to(function () {
         app.numberOfRuns++;
       })
     });
@@ -194,10 +259,10 @@ module("Routing", {setup: reset, teardown: reset});
     var app = wrench.appify({
       listCalled: 0,
       showCalled: 0,
-      list: route("list/:view").to(function (params) {
+      list: routePartial("list/:view").to(function (params) {
         app.listCalled++;
       }),
-      show: route('show/:id').to(function (params) {
+      show: routePartial('show/:id').to(function (params) {
         app.showCalled++;
       })      
     });
@@ -222,7 +287,7 @@ module("Routing", {setup: reset, teardown: reset});
   asyncTest("should add route event handler to all forms with a # in the action", 6, function () {   
     var app = wrench.appify({
       numberOfRuns: 0,
-      login: route("login").to(function (params) {
+      login: routePartial("login").to(function (params) {
         app.params = params;
         app.numberOfRuns++;
       })
@@ -238,7 +303,44 @@ module("Routing", {setup: reset, teardown: reset});
         equal(app.params["username"], "frank",  "app.params['username'] should exist and contain 'frank'");
         equal(app.params["password"], "s3cret", "app.params['password'] should exist and contain 's3cret'");
       }
-      equal(app.numberOfRuns,       1,        "the login function should only be ran once");
+      equal(app.numberOfRuns, 1, "the login function should only be ran once");
       start();
     }, 200);
+  });
+  
+  asyncTest("should remove a partial route from the hash", 7, function () {
+    var app = wrench.appify({
+      searchCnt: 0, listCnt: 0, displayCnt: 0,
+      search: routePartial("search/:query").to(function (params) {
+        app.searchCnt += 1;
+      }),
+      list: routePartial("list/:view").to(function (params) {
+        app.listCnt += 1;
+        if (params['view'] !== 'search') app.removePartial("search");
+      }),
+      display: routePartial("display/:id").to(function (params) {
+        app.displayCnt += 1;
+      })
+    });
+    app.run(true);
+    
+    window.location.hash = "search/dogs;list/search;display/123"
+    setTimeout(function () {
+      equal(app.searchCnt, 1, "search should have been called once");
+      equal(app.listCnt, 1, "list should have been called once");
+      equal(app.displayCnt, 1, "display should have been called once");
+      
+      app.list({"view": "all"});
+      setTimeout(function () {
+        equal(app.searchCnt, 1, "search should have been called once");
+        equal(app.listCnt, 2, "list should have been called twice");
+        equal(app.displayCnt, 1, "display should have been called once");
+        
+        equal(window.location.hash, "#list/all;display/123");
+        
+        start();
+      }, 200);
+    }, 200);
+    
+    
   });

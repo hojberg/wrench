@@ -7,7 +7,6 @@
 
   wrench.VERSION = "0.0.1";
 
-
   // beget object
   var begetObject = function (o, properties) {
     function F() {};
@@ -57,10 +56,12 @@
   // window.location.hash. This will build a string for
   // window.location.hash into multiple route
   // partials if applicable.
-  routing.route2Hash = function (route, parameters) {    
+  routing.route2Hash = function (route, parameters, isPartial) {
     var hash   = route,
         i      = 1,
         params = cloneObject(parameters);
+
+    if (typeof isPartial === "undefined") { var isPartial = false; }
 
     // Set params in new partial string to be added to hash.
     // e.g. 'myroute/:param1/:param2?param3=42&param4=foo
@@ -94,7 +95,7 @@
   
     var newHash = "";
     // window.location.hash is blank
-    if (w.location.hash === '' || w.location.hash === '#') {
+    if (w.location.hash === '' || w.location.hash === '#' || !isPartial) {
       newHash = hash;
     }
     else {
@@ -238,6 +239,22 @@
     }
     routing.lastHash = w.location.hash;
   };
+  
+  // Remove a partial route from window.location.hash
+  routing.removePartial = function (partialRoute) {
+    if (w.location.hash.indexOf(partialRoute) !== -1) {
+      var partials = w.location.hash.replace("#", "").split(";"),
+          newHash  = "";
+      
+      for (var i = 0; i < partials.length; i++) {
+        if (partials[i].substr(0, partialRoute.length) !== partialRoute) {
+          if (newHash !== "") { newHash += ";"; }
+          newHash += partials[i];
+        } 
+      }
+      w.location.hash = newHash;
+    }
+  };
 
   // form elements on the page with '#' as the first
   // character in the action attribute gets a
@@ -292,6 +309,10 @@
 
     route2Hash: function (route, params) {
       routing.route2Hash(route, params);
+    },
+    
+    removePartial: function (partialRoute) {
+      routing.removePartial(partialRoute);
     }
   };
 
@@ -307,25 +328,20 @@
   // or: var users = route("users").to(function () {});
   // all routed functions will be called with a
   // params hash as the only argument
-  w.route = function (route, func) {
-    if (typeof func === 'function') {
-      routing.routes[route] = func;
-      return function (params) {
-        routing.route2Hash(route, params);
-        func.apply(null, arguments);
-      };
-    }
-    else {
-      return {
-        to: function (func) {
-          routing.routes[route] = func;
-          return function (params) {
-            routing.route2Hash(route, params);
-            func.apply(null, arguments);
-          };
-        }
-      };
-    }
+  w.route = function (route, isPartial) {
+    return {
+      to: function (func) {
+        routing.routes[route] = func;
+        return function (params) {
+          routing.route2Hash(route, params, isPartial);
+          func.apply(null, arguments);
+        };
+      }
+    };
+  };
+  
+  w.routePartial = function (route, func) {
+    return w.route(route, true);
   };
 
   w.wrench = wrench;
