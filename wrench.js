@@ -94,27 +94,34 @@
     }
   
     var newHash = "";
-    // window.location.hash is blank
+    // window.location.hash is blank or it's a full route
     if (w.location.hash === '' || w.location.hash === '#' || !isPartial) {
       newHash = hash;
     }
     else {
-      // find out if we should replace a partial in window.location.hash or just add to it
-      // window.location.hash does not include the partial route. Add the partial
-      var newRoute        = w.location.hash,
-          routePrefix     = route,
-          namedPartialPos = route.indexOf(":");
-
-      if (namedPartialPos !== -1) {
-        routePrefix = route.substr(0, namedPartialPos - 1);
+      // If the current route is a full route, the partial should be added, but replace it
+      var currentRoute = w.location.hash.replace("#", "").split(";")[0].split("?")[0];
+      if (currentRoute in routing.routes && !routing.routes[currentRoute].isPartial) {
+        newHash = hash;
       }
+      else {
+        // find out if we should replace a partial in window.location.hash or just add to it
+        // window.location.hash does not include the partial route. Add the partial
+        var newRoute        = w.location.hash,
+            routePrefix     = route,
+            namedPartialPos = route.indexOf(":");
 
-      var prefixRegexp = new RegExp(routePrefix + "[^;]*");
-      newHash = newRoute.replace(prefixRegexp, hash);
+        if (namedPartialPos !== -1) {
+          routePrefix = route.substr(0, namedPartialPos - 1);
+        }
 
-      // nothing was found or replaced, just add the hash
-      if (newHash === w.location.hash && !prefixRegexp.test(newHash)) {
-        newHash = newHash + ";" + hash;
+        var prefixRegexp = new RegExp(routePrefix + "[^;]*");
+        newHash = newRoute.replace(prefixRegexp, hash);
+
+        // nothing was found or replaced, just add the hash
+        if (newHash === w.location.hash && !prefixRegexp.test(newHash)) {
+          newHash = newHash + ";" + hash;
+        }
       }
     }
    
@@ -160,6 +167,7 @@
   // Inspects the current window.location.hash to identify routes.
   // Only handles a route if it has changed since last call to locate.
   // If any of the routes are registered then call the matching funcion of that route.
+  // TODO: make aware of both partial and full routes - proberly just better variable naming
   routing.locate = function () {
 
     // Only locate if the hash hash changed
@@ -227,14 +235,14 @@
             }
 
             // Call the located route
-            routing.routes[route](params);
+            routing.routes[route].func(params);
           }
         }
 
       }
       else if ("/" in routing.routes) {
         // Call the default route if none specified by the hash
-        routing.routes["/"]();
+        routing.routes["/"].func();
       }
     }
     routing.lastHash = w.location.hash;
@@ -329,9 +337,10 @@
   // all routed functions will be called with a
   // params hash as the only argument
   w.route = function (route, isPartial) {
+    if (typeof isPartial === "undefined") { var isPartial = false; }
     return {
       to: function (func) {
-        routing.routes[route] = func;
+        routing.routes[route] = {func: func, isPartial: isPartial};
         return function (params) {
           routing.route2Hash(route, params, isPartial);
           func.apply(null, arguments);

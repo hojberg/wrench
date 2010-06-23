@@ -88,7 +88,7 @@ module("Routing", {setup: reset, teardown: reset});
     equal(app.barbazRoute, "ran");
     
     app.baz();
-    equal(window.location.hash, "#bar/baz;#baz/bob");
+    equal(window.location.hash, "#bar/baz;baz/bob");
     equal(app.bazbobRoute, "ran");
   });
 

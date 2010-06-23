@@ -36,11 +36,11 @@ Each pane can be in different states, these states can be saved with partial rou
 			// this will run after in the boot up process initiated by app.run();
 		},
 	
-		list: route("list/:mailbox").to(function () {
+		list: routePartial("list/:mailbox").to(function () {
 			// fetch all the users and show them on the page
 		}),
 	
-		show: route("show/:id").to(function (params) {
+		show: routePartial("show/:id").to(function (params) {
 			// find the email via params['id']
 		})
 	});
